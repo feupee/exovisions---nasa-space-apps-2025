@@ -1,6 +1,7 @@
 import CompareToEarth from "@/_components/comparetoearth";
 import SearchNewWorlds from "@/_components/searchneworlds";
 import WelcomePage from "@/_components/welcomepage";
+import Image from "next/image";
 
 export default function Home() {
   return (

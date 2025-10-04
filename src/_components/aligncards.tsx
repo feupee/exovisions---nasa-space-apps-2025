@@ -25,7 +25,7 @@ const AlignCards = () => {
         backContent={
           <Card className="flex-1 h-[500px] bg-black border border-white/10 flex flex-col items-center justify-center p-6 shadow-[0px_8px_0px_0px_rgba(64,64,64,0.8)]">
             <p className="text-white font-nunito text-center">
-              Existem mundos "órfãos" que foram ejetados de seus sistemas
+              Existem mundos órfãos que foram ejetados de seus sistemas
               solares. Eles vagam na escuridão do espaço interestelar.
             </p>
           </Card>
@@ -51,7 +51,7 @@ const AlignCards = () => {
         backContent={
           <Card className="flex-1 h-[500px] bg-black border border-white/10 flex flex-col items-center justify-center p-6 shadow-[0px_8px_0px_0px_rgba(64,64,64,0.8)]">
             <p className="text-white font-nunito text-center">
-              Existem mundos "órfãos" que foram ejetados de seus sistemas
+              Existem mundos órfãos que foram ejetados de seus sistemas
               solares. Eles vagam na escuridão do espaço interestelar.
             </p>
           </Card>
@@ -76,7 +76,7 @@ const AlignCards = () => {
         backContent={
           <Card className="flex-1 h-[500px] bg-black border border-white/10 flex flex-col items-center justify-center p-6 shadow-[0px_8px_0px_0px_rgba(64,64,64,0.8)]">
             <p className="text-white font-nunito text-center">
-              Existem mundos "órfãos" que foram ejetados de seus sistemas
+              Existem mundos órfãos que foram ejetados de seus sistemas
               solares. Eles vagam na escuridão do espaço interestelar.
             </p>
           </Card>

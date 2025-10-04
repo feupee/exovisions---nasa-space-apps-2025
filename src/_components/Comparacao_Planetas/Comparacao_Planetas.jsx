@@ -28,7 +28,7 @@ export default function Comparacao_Planetas() {
   };
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full bg-black border border-white/10">
       <Scene3D exoplanetData={exoplanetData} />
     </div>
   );

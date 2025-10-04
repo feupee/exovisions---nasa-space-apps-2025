@@ -1,17 +1,31 @@
 import CompareToEarth from "@/_components/comparetoearth";
 import SearchNewWorlds from "@/_components/searchneworlds";
-import WelcomePage from "@/_components/welcomepage";
-import Image from "next/image";
+import ApppliedBlur from "@/_components/Blur/AppliedBlur";
+import ScienceEveryday from "@/_components/scienceeveryday";
+import DarkVeil from "@/_components/DarkVeil";
+import AlignCards from "@/_components/aligncards";
+import AjudaCircle from "@/_components/ajudacircle";
+import KnowMore from "@/_components/KnowMore";
+import Footer from "@/_components/Footer";
 
 export default function Home() {
   return (
-    <main className="bg-black overflow-x-auto scrollbar-hide">
+    <main className="relative bg-black overflow-x-hidden scrollbar-hide">
       <div className="w-full h-screen">
-        <WelcomePage />
+        <DarkVeil />
       </div>
+
+      <ApppliedBlur />
+      <div className="relative">
         <SearchNewWorlds />
         <CompareToEarth />
-        
+        <ScienceEveryday />
+        <AlignCards />
+        <AjudaCircle />
+        <KnowMore />
+      </div>
+
+      <Footer />
     </main>
   );
 }

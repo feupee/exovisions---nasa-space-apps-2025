@@ -6,6 +6,7 @@ import Image from "next/image";
 import React from "react";
 import { Button } from "./ui/button";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 const vertex = `
 attribute vec2 position;
@@ -191,18 +192,20 @@ export default function DarkVeil({
         </nav>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white z-50">
-          <h1 className="text-5xl font-bold font-nunito">
-            Bem-vindo ao ExoVision
+          <h1 className="text-7xl font-bold font-nunito">
+            Bem-vindo<br /> ao ExoVisions
           </h1>
-          <p className="mt-4 text-lg">
+          <p className="mt-4 text-2xl">
             Identifique exoplanetas, suas consequências e seus impactos!
           </p>
           <div className="space-x-4">
+            <Link href="/identify">
             <Button className="mt-6 px-6 py-3 rounded- bg-blue-600 hover:bg-blue-500 transition cursor-pointer">
               Comece
             </Button>
+            </Link>
 
-            <Button className="mt-6 px-6 py-3 rounded- cursor-pointer">
+            <Button className="mt-6 px-6 py-3 rounded- cursor-pointer border">
               Saiba mais
               <ArrowRight className="ml-2 inline-block" />
             </Button>

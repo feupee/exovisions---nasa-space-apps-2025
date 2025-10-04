@@ -2,7 +2,7 @@ import CompareToEarth from "@/_components/comparetoearth";
 import SearchNewWorlds from "@/_components/searchneworlds";
 import ApppliedBlur from "@/_components/Blur/AppliedBlur";
 import ScienceEveryday from "@/_components/scienceeveryday";
-import DarkVeil from "@/_components/DarkVeil";
+import DarkVeil from "@/_components/welcomepage";
 import AlignCards from "@/_components/aligncards";
 import AjudaCircle from "@/_components/ajudacircle";
 import KnowMore from "@/_components/KnowMore";
@@ -23,9 +23,10 @@ export default function Home() {
         <AlignCards />
         <AjudaCircle />
         <KnowMore />
+        <Footer />
       </div>
 
-      <Footer />
+      
     </main>
   );
 }

@@ -1,13 +1,15 @@
 const ScienceEveryday = () => {
   return (
     <div className="w-full flex justify-center py-20 px-6">
-      <div className="flex flex-col items-center space-y-8 max-w-4xl text-center">
+      <div className="flex flex-col items-center space-y-15 max-w-4xl text-center">
         <p className="text-lg md:text-xl leading-relaxed text-white">
           A cada dia, a ciência e a tecnologia caminham juntas para responder
           uma das maiores perguntas da humanidade: estamos sozinhos no universo?
         </p>
 
-        
+        {/* Linha separadora */}
+        <div className="w-full h-[3px] bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
+
 
         <p className="text-base md:text-lg leading-relaxed text-gray-300 max-w-3xl">
           Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do

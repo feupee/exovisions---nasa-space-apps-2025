@@ -11,11 +11,13 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@material-tailwind/react": "^2.1.10",
+    "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.23.22",
     "lucide-react": "^0.544.0",
     "next": "15.5.4",
     "ogl": "^1.0.11",

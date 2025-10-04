@@ -5,14 +5,14 @@ const AppliedBlur = () => {
         <>
         {/* Blur para o descubra novos mundos */}
       <Blur
-        className="absolute top-[15%] right-[32%]"
+        className="absolute top-[18%] right-[35%]"
         size="w-[700px] h-[700px]"
         color="bg-blue-600"
-        opacity="opacity-20"
+        opacity="opacity-15"
       />
       {/* Blur para a seção SearchNewWorlds/CompareToEarth */}
       <Blur
-        className="absolute top-[17%] left-[28%]"
+        className="absolute top-[21%] left-[28%]"
         size="w-[700px] h-[800px]"
         color="bg-blue-600"
         opacity="opacity-15"

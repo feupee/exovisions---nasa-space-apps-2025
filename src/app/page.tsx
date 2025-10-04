@@ -13,6 +13,7 @@ export default function Home() {
     <main className="relative bg-black overflow-x-hidden scrollbar-hide">
       <div className="w-full h-screen">
         <DarkVeil />
+        
       </div>
 
       <ApppliedBlur />

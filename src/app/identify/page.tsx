@@ -37,11 +37,16 @@ const IdentifyPage = () => {
       };
 
       // Adicionar campos opcionais se preenchidos
-      const optionalFields = ["pl_insol", "pl_eqt", "st_teff", "st_logg"];
+      const optionalFields: (keyof ExoplanetData)[] = [
+        "pl_insol",
+        "pl_eqt",
+        "st_teff",
+        "st_logg",
+      ];
       optionalFields.forEach((field) => {
-        const value = formData.get(field) as string;
+        const value = formData.get(field as string) as string;
         if (value && value.trim() !== "") {
-          (data as any)[field] = parseFloat(value);
+          data[field] = parseFloat(value);
         }
       });
 

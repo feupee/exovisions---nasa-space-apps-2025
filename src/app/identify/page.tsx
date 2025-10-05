@@ -188,13 +188,13 @@ const IdentifyPage = () => {
                       <div className="pt-5">
                         <p className="text-white">XGBoost: </p>
                         <p className="text-white">KOI - 82% de precisão</p>
-                        <p className="text-white">TOI - 77%</p>
+                        <p className="text-white">TOI - 77% de precisão</p>
                         <p className="text-white">K2 - 98% de precisão</p>
                       </div>
                       <div className="pt-5">
                         <p className="text-white">Random Forest: </p>
                         <p className="text-white">KOI - 83,43% de precisão</p>
-                        <p className="text-white">TOI - 79%</p>
+                        <p className="text-white">TOI - 79% de precisão</p>
                         <p className="text-white">K2 - 99% de precisão</p>
                       </div>
                     </DialogDescription>

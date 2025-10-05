@@ -86,22 +86,15 @@ const KnowMore = () => {
             SOBRE NÓS
           </h2>
           <p className="text-white text-center max-w-3xl mt-4 mb-8 px-4">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo consequat. Duis aute irure dolor in
-            reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-            pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-            culpa qui officia deserunt mollit anim id est laborum.
+            Somos estudantes da Universidade Federal de Uberlândia (UFU)
+            apaixonados por Machine Learning, Webdevelopment e Design, e
+            enxergamos esse desafio da NASA como uma forma de aprender mais
+            sobre os assuntos que temos estudado, colocando em prática diversos
+            conceitos vistos tanto na Universidade quanto em pesquisas.
           </p>
           <p className="text-white text-center max-w-3xl mt-4 mb-8 px-4">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo consequat. Duis aute irure dolor in
-            reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-            pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-            culpa qui officia deserunt mollit anim id est laborum.
+            Estamos comprometidos em explorar novas soluções e
+            contribuir para a comunidade científica. Tal como a solução desse projeto foi um trabalho em conjunto bem estruturado entre todas as partes, possibilitando assim o melhor uso de nossas habilidades. Esperamos que com esse projeto possamos auxiliar pessoas a chegar onde estamos e alcancar novos patamares na exploração espacial.
           </p>
         </div>
         <div className="w-full flex items-center justify-center relative">

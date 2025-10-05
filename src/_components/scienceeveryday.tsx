@@ -10,15 +10,13 @@ const ScienceEveryday = () => {
         {/* Linha separadora */}
         <div className="w-full h-[3px] bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
 
-
-        <p className="text-base md:text-lg leading-relaxed text-gray-300 max-w-3xl">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-          eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
-          minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-          aliquip ex ea commodo consequat. Duis aute irure dolor in
-          reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-          pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-          culpa qui officia deserunt mollit anim id est laborum.
+        <p className="text-base md:text-lg leading-relaxed text-gray-300 max-w-4xl">
+          Através da inteligência artificial, estamos expandindo os horizontes
+          da exploração espacial. Nosso sistema analisa milhares de dados
+          astronômicos em tempo real, identificando padrões e sinais que podem
+          indicar a presença de novos exoplanetas. Combinando ciência,
+          tecnologia e curiosidade humana, buscamos compreender melhor os mundos
+          além do nosso e desvendar os segredos do cosmos.
         </p>
       </div>
     </div>

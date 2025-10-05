@@ -4,7 +4,7 @@ import AnimatedFlipCard from "./ui/flipcards";
 
 const AlignCards = () => {
   return (
-    <div className="flex flex-row items-center justify-center min-h-screen bg-black gap-20 px-10">
+    <div className="flex flex-row items-center justify-center min-h-screen bg-black gap-20 px-10 pb-40">
       {/* Cards principais */}
       <AnimatedFlipCard
         frontContent={

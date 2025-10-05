@@ -205,7 +205,7 @@ export default function DarkVeil({
             </Button>
             </Link>
 
-            <Button className="mt-6 px-6 py-3 rounded- cursor-pointer border">
+            <Button className="mt-6 px-6 py-3 rounded-">
               Saiba mais
               <ArrowRight className="ml-2 inline-block" />
             </Button>

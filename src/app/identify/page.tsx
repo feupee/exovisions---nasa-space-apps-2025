@@ -9,6 +9,7 @@ import { Label } from "@/_components/ui/label";
 import { Card, CardContent, CardTitle } from "@/_components/ui/card";
 import Comparacao_Planetas from "@/_components/Comparacao_Planetas/Comparacao_Planetas";
 import { useExoplanetAPI, ExoplanetData } from "@/hooks/useExoplanetAPI";
+import { classifyPlanet } from "@/utils/planetClassification";
 
 const IdentifyPage = () => {
   const [submittedData, setSubmittedData] = useState<ExoplanetData | null>(
@@ -92,14 +93,13 @@ const IdentifyPage = () => {
 
   // Função para determinar o tipo de terreno baseado nos dados
   const determineTerrainType = (data: ExoplanetData): string => {
-    const temp = data.pl_eqt || 288;
-    const radius = data.pl_rade;
+    const planetProfile = classifyPlanet(data);
+    return planetProfile.type;
+  };
 
-    if (temp < 200) return "ice";
-    if (temp > 400) return "desert";
-    if (radius < 0.5) return "rocky";
-    if (temp > 273 && temp < 373) return "vegetation";
-    return "terrestrial";
+  // Função para obter descrição detalhada
+  const getPlanetDescription = (data: ExoplanetData) => {
+    return classifyPlanet(data);
   };
 
   // Função para calcular temperatura média
@@ -160,7 +160,7 @@ const IdentifyPage = () => {
           </div>
 
           {/* Formulário */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 px-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Período orbital */}
               <div className="space-y-2">
@@ -248,7 +248,7 @@ const IdentifyPage = () => {
                   htmlFor="insolation"
                   className="text-white font-medium text-sm"
                 >
-                  Insolação (S⊕) - Opcional
+                  Insolação (S⊕)
                 </Label>
                 <Input
                   id="insolation"
@@ -267,7 +267,7 @@ const IdentifyPage = () => {
                   htmlFor="equilibriumTemp"
                   className="text-white font-medium text-sm"
                 >
-                  Temperatura de equilíbrio (K) - Opcional
+                  Temperatura de equilíbrio (K)
                 </Label>
                 <Input
                   id="equilibriumTemp"
@@ -343,11 +343,6 @@ const IdentifyPage = () => {
             >
               <div className="flex items-center gap-3 mb-4">
                 <div
-                  className={`w-4 h-4 rounded-full ${
-                    identificationResult.prediction === 1
-                      ? "bg-green-400"
-                      : "bg-red-400"
-                  }`}
                 ></div>
                 <h3 className="text-xl font-bold text-white">
                   Resultado da Análise AI
@@ -422,11 +417,11 @@ const IdentifyPage = () => {
                 />
               </div>
 
-              {/* Informações comparativas */}
+              {/* Informações comparativas melhoradas */}
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4">
                   <h3 className="text-blue-400 font-semibold mb-3 text-lg">
-                    🌍 Terra
+                    Terra
                   </h3>
                   <ul className="text-white text-sm space-y-2">
                     <li>
@@ -450,21 +445,21 @@ const IdentifyPage = () => {
 
                 <div className="bg-purple-500/20 border border-purple-500/30 rounded-lg p-4">
                   <h3 className="text-purple-400 font-semibold mb-3 text-lg">
-                    🪐 Seu Exoplaneta
+                    Seu Exoplaneta
                   </h3>
                   <ul className="text-white text-sm space-y-2">
                     <li>
                       <span className="font-medium">Raio:</span>{" "}
-                      {submittedData.pl_rade.toFixed(2)} R⊕
+                      {Math.abs(submittedData.pl_rade).toFixed(2)} R⊕
                     </li>
                     <li>
                       <span className="font-medium">Período orbital:</span>{" "}
-                      {submittedData.pl_orbper.toFixed(2)} dias
+                      {Math.abs(submittedData.pl_orbper).toFixed(2)} dias
                     </li>
                     <li>
                       <span className="font-medium">Temperatura:</span>{" "}
                       {submittedData.pl_eqt
-                        ? `${(submittedData.pl_eqt - 273.15).toFixed(1)}°C`
+                        ? `${Math.abs(submittedData.pl_eqt).toFixed(1)}K`
                         : "N/A"}
                     </li>
                     <li>
@@ -473,11 +468,39 @@ const IdentifyPage = () => {
                     </li>
                     <li>
                       <span className="font-medium">Insolação:</span>{" "}
-                      {submittedData.pl_insol?.toFixed(2) || "N/A"} S⊕
+                      {submittedData.pl_insol
+                        ? Math.abs(submittedData.pl_insol).toFixed(2)
+                        : "N/A"}{" "}
+                      S⊕
                     </li>
                   </ul>
                 </div>
               </div>
+
+              {/* Nova seção: Características do planeta */}
+              {(() => {
+                const planetInfo = getPlanetDescription(submittedData);
+                return (
+                  <div className="mt-6 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-lg p-6">
+                    <h3 className="text-purple-300 font-semibold mb-3 text-xl">
+                      Características do Planeta
+                    </h3>
+                    <p className="text-white/90 mb-4 leading-relaxed">
+                      {planetInfo.description}
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {planetInfo.characteristics.map((char, index) => (
+                        <div
+                          key={index}
+                          className="bg-white/5 rounded-lg p-3 text-center"
+                        >
+                          <span className="text-white/80 text-sm">{char}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>

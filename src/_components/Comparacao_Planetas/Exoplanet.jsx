@@ -1,80 +1,88 @@
+// src/components/Exoplanet.jsx
 "use client";
-import { useRef, useEffect, useState } from "react";
+
+import { useRef } from "react";
+import { useLoader } from "@react-three/fiber";
+import { TextureLoader } from "three";
 import * as THREE from "three";
-import { useFrame, useLoader } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
+import { getTexturePath } from "@/utils/planetClassification";
 
 export default function Exoplanet({ position, planetData }) {
   const surfaceRef = useRef();
-  const [textureUrl, setTextureUrl] = useState(null);
-  const [textureLoaded, setTextureLoaded] = useState(false);
-  const [surfaceMap, setSurfaceMap] = useState(null);
+  const cloudsRef = useRef();
 
-  // 1️⃣ Gera a textura via backend e cria um URL temporário
-  useEffect(() => {
-    async function fetchTexture() {
-      try {
-        const res = await fetch("http://localhost:5000/generate_texture", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(planetData),
-        });
-        const data = await res.json();
+  const { type, hasClouds, variation, radius = 1.0 } = planetData;
 
-        // Converte base64 para Blob (imagem real)
-        const byteCharacters = atob(data.texture);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: "image/png" });
-        const blobUrl = URL.createObjectURL(blob);
+  // Calcular o raio baseado nos dados do planeta
+  const baseRadius = 2.0; // Terra = 2.0 unidades
+  const scaledRadius = baseRadius * radius; // Usar o raio do planetData!
+  const cloudsRadius = scaledRadius * 1.02; // Nuvens ligeiramente maiores
 
-        setTextureUrl(blobUrl);
-      } catch (error) {
-        console.error("Erro ao gerar textura:", error);
-      }
-    }
+  console.log("Exoplanet radius data:", {
+    originalRadius: radius,
+    scaledRadius,
+    cloudsRadius,
+  });
 
-    fetchTexture();
-  }, [planetData]);
+  // ==================================================================
+  // ## USANDO AS FUNÇÕES AUXILIARES CORRETAS ##
+  // ==================================================================
 
-  // 2️⃣ Quando o URL da textura estiver pronto, carrega com TextureLoader
-  useEffect(() => {
-    if (!textureUrl) return;
+  // 1. Usa a função auxiliar para gerar o caminho da superfície
+  const surfacePath = getTexturePath(type, variation, false);
 
-    const loader = new THREE.TextureLoader();
-    loader.load(
-      textureUrl,
-      (texture) => {
-        setSurfaceMap(texture);
-        setTextureLoaded(true);
-      },
-      undefined,
-      (err) => console.error("Erro ao carregar textura:", err)
-    );
-  }, [textureUrl]);
+  // 2. Usa a função auxiliar para gerar o caminho das nuvens
+  let cloudsPath;
+  if (hasClouds) {
+    cloudsPath = getTexturePath(type, variation, true);
+  } else {
+    cloudsPath = "/textures/empty.png";
+  }
 
-  // 3️⃣ Gira o planeta
-  useFrame((_, delta) => {
-    if (surfaceRef.current && textureLoaded) {
+  console.log("Texture paths:", { surfacePath, cloudsPath });
+  // ==================================================================
+
+  // Carrega as duas texturas
+  const [surfaceMap, cloudsMap] = useLoader(TextureLoader, [
+    surfacePath,
+    cloudsPath,
+  ]);
+
+  useFrame((state, delta) => {
+    if (surfaceRef.current) {
       surfaceRef.current.rotation.y += delta * 0.1;
+    }
+    if (hasClouds && cloudsRef.current) {
+      cloudsRef.current.rotation.y += delta * 0.12;
     }
   });
 
-  // 4️⃣ Renderiza só quando tiver textura
-  if (!textureLoaded) return null;
-
   return (
     <group position={position}>
+      {/* Esfera da Superfície - AGORA USA O RAIO CALCULADO */}
       <mesh ref={surfaceRef} castShadow receiveShadow>
-        <sphereGeometry args={[2, 64, 64]} />
+        <sphereGeometry args={[scaledRadius, 64, 64]} />
         <meshStandardMaterial
           map={surfaceMap}
-          roughness={0.8}
+          roughness={0.7}
           metalness={0.1}
         />
       </mesh>
+
+      {/* Esfera das Nuvens - TAMBÉM USA O RAIO CALCULADO */}
+      {hasClouds && (
+        <mesh ref={cloudsRef}>
+          <sphereGeometry args={[cloudsRadius, 64, 64]} />
+          <meshStandardMaterial
+            map={cloudsMap}
+            transparent={true}
+            opacity={0.8}
+            alphaMap={cloudsMap}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      )}
     </group>
   );
 }

@@ -3,8 +3,6 @@ import Image from "next/image";
 const KnowMore = () => {
   return (
     <div className="w-full min-h-screen px-10">
-      
-
       <div className="flex flex-row w-full mb-40">
         <div className="w-full flex items-center justify-center relative">
           <Image
@@ -39,22 +37,34 @@ const KnowMore = () => {
             PROJETO
           </h2>
           <p className="text-white text-center max-w-3xl mt-4 mb-8 px-4">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo consequat. Duis aute irure dolor in
-            reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-            pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-            culpa qui officia deserunt mollit anim id est laborum.
+            Nosso projeto apresenta uma plataforma baseada em inteligência
+            artificial voltada para apoiar a detecção de exoplanetas. Partindo
+            do zero, desenvolvemos um sistema que integra dados públicos das
+            missões Kepler, K2 e TESS da NASA. Essas missões fornecem séries
+            temporais fotométricas, conhecidas como curvas de luz, que registram
+            pequenas variações no brilho de estrelas. Essas variações podem
+            indicar o trânsito de um planeta, mas muitas vezes estão escondidas
+            em ruído ou são confundidas com falsos positivos, seja por efeitos
+            instrumentais ou fenômenos astrofísicos.
           </p>
-          <p className="text-white text-center max-w-3xl mt-4 mb-8 px-4">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo consequat. Duis aute irure dolor in
-            reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-            pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
-            culpa qui officia deserunt mollit anim id est laborum.
+          <p className="text-white text-center max-w-3xl mb-8 px-4">
+            Para lidar com esse desafio, nosso pipeline de IA processa
+            automaticamente milhares de curvas de luz, extraindo características
+            relevantes dos trânsitos e convertendo-as em uma pontuação de
+            probabilidade interpretável. Essa pontuação indica a chance de um
+            sinal corresponder a um exoplaneta real em vez de uma detecção
+            espúria. Em seguida, os resultados são exibidos em tempo real em um
+            painel interativo, de forma acessível, clara e visual.
+          </p>
+          <p className="text-white text-center max-w-3xl mb-8 px-4">
+            Nosso objetivo não é substituir a validação astrofísica tradicional,
+            mas oferecer uma ferramenta ágil e confiável de triagem. Ao ranquear
+            os candidatos de acordo com sua probabilidade de serem exoplanetas
+            verdadeiros, o sistema funciona como um guia, permitindo que
+            pesquisadores concentrem seus esforços nos sinais mais promissores.
+            Essa combinação entre dados de missões espaciais abertas e análise
+            baseada em IA demonstra o potencial do aprendizado de máquina para
+            acelerar descobertas científicas em astronomia
           </p>
         </div>
       </div>

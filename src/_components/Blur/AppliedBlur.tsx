@@ -5,18 +5,19 @@ const AppliedBlur = () => {
         <>
         {/* Blur para o descubra novos mundos */}
       <Blur
-        className="absolute top-[18%] right-[35%]"
+        className="absolute top-[15%] right-[10%]"
         size="w-[700px] h-[700px]"
         color="bg-blue-600"
         opacity="opacity-15"
       />
       {/* Blur para a seção SearchNewWorlds/CompareToEarth */}
       <Blur
-        className="absolute top-[21%] left-[28%]"
+        className="absolute top-[21%] left-[10%]"
         size="w-[700px] h-[800px]"
-        color="bg-blue-600"
+        color="bg-blue-500"
         opacity="opacity-15"
       />
+      
       {/* Blur para knowmore1 */}
       <Blur
         className="absolute top-[73%] left-[40%]"

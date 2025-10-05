@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#google cloud
+vertex-sa.json
+backend_modelo/vertex-sa.json
+**/vertex-sa.json

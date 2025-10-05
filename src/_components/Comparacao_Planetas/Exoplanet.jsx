@@ -1,69 +1,80 @@
-// src/components/Exoplanet.jsx
 "use client";
-
-import { useRef } from 'react';
-import { useLoader } from '@react-three/fiber';
-import { TextureLoader } from 'three';
-import * as THREE from 'three';
-import { useFrame } from '@react-three/fiber';
+import { useRef, useEffect, useState } from "react";
+import * as THREE from "three";
+import { useFrame, useLoader } from "@react-three/fiber";
 
 export default function Exoplanet({ position, planetData }) {
   const surfaceRef = useRef();
-  const cloudsRef = useRef();
+  const [textureUrl, setTextureUrl] = useState(null);
+  const [textureLoaded, setTextureLoaded] = useState(false);
+  const [surfaceMap, setSurfaceMap] = useState(null);
 
-  const { type, hasClouds, variation } = planetData;
+  // 1️⃣ Gera a textura via backend e cria um URL temporário
+  useEffect(() => {
+    async function fetchTexture() {
+      try {
+        const res = await fetch("http://localhost:5000/generate_texture", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(planetData),
+        });
+        const data = await res.json();
 
-  // ==================================================================
-  // ## LÓGICA CORRIGIDA PARA O NOVO PADRÃO DE NOMES ##
-  // ==================================================================
-  
-  // 1. Monta o nome do arquivo da superfície no novo padrão
-  const surfaceFileName = `${type}_${variation}.png`;
-  const surfacePath = `/textures/${type}/${surfaceFileName}`;
+        // Converte base64 para Blob (imagem real)
+        const byteCharacters = atob(data.texture);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: "image/png" });
+        const blobUrl = URL.createObjectURL(blob);
 
-  // 2. Monta o nome do arquivo de nuvens (se aplicável) no novo padrão
-  let cloudsPath;
-  if (hasClouds) {
-    const cloudsFileName = `${type}_${variation}_clouds.png`;
-    cloudsPath = `/textures/${type}/${cloudsFileName}`;
-  } else {
-    // Se não tiver nuvens, aponta para uma imagem vazia/transparente
-    cloudsPath = '/textures/empty.png'; 
-  }
-  // ==================================================================
+        setTextureUrl(blobUrl);
+      } catch (error) {
+        console.error("Erro ao gerar textura:", error);
+      }
+    }
 
-  // Carrega as duas texturas. Se não houver nuvens, ele carregará a imagem vazia.
-  // Certifique-se de ter um arquivo 'empty.png' (1x1 pixel transparente) em /public/textures/
-  const [surfaceMap, cloudsMap] = useLoader(TextureLoader, [surfacePath, cloudsPath]);
+    fetchTexture();
+  }, [planetData]);
 
-  useFrame((state, delta) => {
-    surfaceRef.current.rotation.y += delta * 0.1;
-    if (hasClouds) {
-      cloudsRef.current.rotation.y += delta * 0.12;
+  // 2️⃣ Quando o URL da textura estiver pronto, carrega com TextureLoader
+  useEffect(() => {
+    if (!textureUrl) return;
+
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      textureUrl,
+      (texture) => {
+        setSurfaceMap(texture);
+        setTextureLoaded(true);
+      },
+      undefined,
+      (err) => console.error("Erro ao carregar textura:", err)
+    );
+  }, [textureUrl]);
+
+  // 3️⃣ Gira o planeta
+  useFrame((_, delta) => {
+    if (surfaceRef.current && textureLoaded) {
+      surfaceRef.current.rotation.y += delta * 0.1;
     }
   });
 
+  // 4️⃣ Renderiza só quando tiver textura
+  if (!textureLoaded) return null;
+
   return (
     <group position={position}>
-      {/* Esfera da Superfície */}
       <mesh ref={surfaceRef} castShadow receiveShadow>
         <sphereGeometry args={[2, 64, 64]} />
-        <meshStandardMaterial map={surfaceMap} roughness={0.7} metalness={0.1} />
+        <meshStandardMaterial
+          map={surfaceMap}
+          roughness={0.8}
+          metalness={0.1}
+        />
       </mesh>
-      
-      {/* Esfera das Nuvens */}
-      {hasClouds && (
-        <mesh ref={cloudsRef} scale={[1.02, 1.02, 1.02]}>
-          <sphereGeometry args={[2, 64, 64]} />
-          <meshStandardMaterial 
-            map={cloudsMap}
-            transparent={true}
-            opacity={0.8}
-            alphaMap={cloudsMap}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-      )}
     </group>
   );
 }

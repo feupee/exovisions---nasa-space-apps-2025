@@ -1,134 +1,145 @@
 # backend_modelo/predict.py
 import sys
 import json
-import requests
-import os
-from google.oauth2.service_account import Credentials
-from google.auth.transport.requests import Request
+import logging
+
+# Configurar logging para stderr (não interfere no stdout JSON)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(message)s',
+    stream=sys.stderr
+)
 
 def predict_exoplanet(input_data):
     try:
-        # --- Configurações com caminho absoluto ---
-        PROJECT_ID   = "nasa-exoplanetas"
-        REGION       = "us-central1"
-        ENDPOINT_ID  = "2905308843305074688"
+        models_data = input_data.get("models", [])
+        original_data = input_data.get("originalData", {})
         
-        # Usar caminho absoluto para o arquivo de credenciais
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        KEY_PATH = os.path.join(script_dir, "vertex-sa.json")
+        # Usar logging.info ao invés de print para logs
+        logging.info(f"Executando {len(models_data)} modelos")
         
-        print(f"=== DEBUG PATHS ===", file=sys.stderr)
-        print(f"Script dir: {script_dir}", file=sys.stderr)
-        print(f"Key path: {KEY_PATH}", file=sys.stderr)
-        print(f"Key exists: {os.path.exists(KEY_PATH)}", file=sys.stderr)
+        results = []
         
-        # Verificar se o arquivo existe
-        if not os.path.exists(KEY_PATH):
-            raise FileNotFoundError(f"Arquivo vertex-sa.json não encontrado em {KEY_PATH}")
-        
-        # 1) Pega access token
-        scopes = ["https://www.googleapis.com/auth/cloud-platform"]
-        creds = Credentials.from_service_account_file(KEY_PATH, scopes=scopes)
-        creds.refresh(Request())
-        token = creds.token
-
-        # 2) Monta URL
-        url = (
-            f"https://{REGION}-prediction-aiplatform.googleapis.com/"
-            f"v1/projects/{PROJECT_ID}/locations/{REGION}/endpoints/{ENDPOINT_ID}:predict"
-        )
-
-        # 3) Payload
-        payload = {
-            "instances": [
-                {
-                    "domain": "koi",
-                    "features": {
-                        "pl_orbper": float(input_data.get("pl_orbper", 0)),
-                        "pl_trandurh": float(input_data.get("pl_trandurh", 0)),
-                        "pl_trandep": float(input_data.get("pl_trandep", 0)),
-                        "pl_rade": float(input_data.get("pl_rade", 0)),
-                        "pl_insol": float(input_data.get("pl_insol", 0)),
-                        "pl_eqt": float(input_data.get("pl_eqt", 0)),
-                        "st_teff": float(input_data.get("st_teff", 0)),
-                        "st_logg": float(input_data.get("st_logg", 0))
+        for model_info in models_data:
+            model_name = model_info["name"]
+            features = model_info["features"]
+            field_count = model_info["fieldCount"]
+            
+            logging.info(f"\n=== EXECUTANDO {model_name.upper()} ({field_count} campos) ===")
+            logging.info(f"Features: {json.dumps(features, indent=2)}")
+            
+            # Configurar endpoint baseado no número de campos
+            if field_count == 6:
+                endpoint_id = "seu_endpoint_6_campos"
+            elif field_count == 7:
+                endpoint_id = "seu_endpoint_7_campos"
+            elif field_count == 8:
+                endpoint_id = "seu_endpoint_8_campos"
+            else:
+                endpoint_id = "seu_endpoint_ensemble"
+            
+            # Payload para o modelo específico
+            payload = {
+                "instances": [
+                    {
+                        "domain": "koi",
+                        "features": features
                     }
+                ]
+            }
+            
+            # Simular chamada ao modelo (substitua pela chamada real)
+            try:
+                # SIMULAÇÃO - substitua pela chamada real
+                import random
+                simulated_prediction = {
+                    "label": random.choice([0, 1]),
+                    "confidence": random.uniform(0.6, 0.95),
+                    "model": model_name,
+                    "field_count": field_count
                 }
-            ]
-        }
-
-        # 4) Chamada HTTP
-        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-        r = requests.post(url, headers=headers, json=payload, timeout=30)
-        
-        print(f"HTTP {r.status_code}", file=sys.stderr)
-        print(f"Response: {r.text}", file=sys.stderr)
-        
-        r.raise_for_status()
-        
-        # 5) Processar resposta
-        result = r.json()
-        predictions = result.get("predictions", [])
-        
-        if predictions:
-            prediction = predictions[0]
-            
-            label = int(prediction.get("label", 0))
-            confidence = float(prediction.get("p_domain", 0.0))
-            threshold = float(prediction.get("threshold", 0.5))
-            domain = prediction.get("domain", "koi")
                 
-            return {
-                "label": label,
-                "confidence": confidence,
-                "threshold": threshold,
-                "domain": domain,
-                "raw_prediction": prediction
-            }
-        else:
-            return {
-                "label": 0,
-                "confidence": 0.0,
-                "error": "Nenhuma predição retornada"
-            }
-            
+                results.append(simulated_prediction)
+                logging.info(f"Resultado {model_name}: {simulated_prediction}")
+                
+            except Exception as model_error:
+                logging.error(f"Erro no modelo {model_name}: {model_error}")
+                results.append({
+                    "label": 0,
+                    "confidence": 0.0,
+                    "model": model_name,
+                    "field_count": field_count,
+                    "error": str(model_error)
+                })
+        
+        # Processar resultados - usar ensemble ou melhor resultado
+        best_result = max(results, key=lambda x: x.get("confidence", 0))
+        
+        final_result = {
+            "label": best_result["label"],
+            "confidence": best_result["confidence"],
+            "best_model": best_result["model"],
+            "field_count_used": best_result["field_count"],
+            "all_results": results,
+            "ensemble_prediction": calculate_ensemble(results)
+        }
+        
+        logging.info(f"\n=== RESULTADO FINAL ===")
+        logging.info(json.dumps(final_result, indent=2))
+        
+        return final_result
+        
     except Exception as e:
-        print(f"Erro interno: {str(e)}", file=sys.stderr)
+        logging.error(f"Erro geral: {e}")
         return {
             "label": 0,
             "confidence": 0.0,
-            "error": str(e)
+            "error": str(e),
+            "all_results": []
         }
 
+def calculate_ensemble(results):
+    """Calcula predição ensemble dos modelos"""
+    if not results:
+        return {"label": 0, "confidence": 0.0}
+    
+    # Média ponderada das confidências
+    total_confidence = 0
+    total_weight = 0
+    positive_votes = 0
+    
+    for result in results:
+        if "error" not in result:
+            confidence = result.get("confidence", 0)
+            total_confidence += confidence
+            total_weight += 1
+            if result.get("label", 0) == 1:
+                positive_votes += confidence
+    
+    if total_weight == 0:
+        return {"label": 0, "confidence": 0.0}
+    
+    avg_confidence = total_confidence / total_weight
+    vote_ratio = positive_votes / total_confidence if total_confidence > 0 else 0
+    
+    # Decisão ensemble
+    ensemble_label = 1 if vote_ratio > 0.5 else 0
+    ensemble_confidence = avg_confidence * (vote_ratio if ensemble_label == 1 else (1 - vote_ratio))
+    
+    return {
+        "label": ensemble_label,
+        "confidence": ensemble_confidence,
+        "vote_ratio": vote_ratio
+    }
+
 if __name__ == "__main__":
-    try:
-        if len(sys.argv) < 2:
-            test_data = {
-                "pl_orbper": 0.5,
-                "pl_trandurh": 0.8,
-                "pl_trandep": 0.3,
-                "pl_rade": 0.9,
-                "pl_insol": 0.1,
-                "pl_eqt": 0.2,
-                "st_teff": 0.3,
-                "st_logg": 0.4
-            }
-            input_data = test_data
-        else:
-            if sys.argv[1].endswith('.json'):
-                with open(sys.argv[1], 'r') as f:
-                    input_data = json.load(f)
-            else:
-                input_json = sys.argv[1]
-                input_data = json.loads(input_json)
-        
+    if len(sys.argv) > 1:
+        input_json = sys.argv[1]
+        input_data = json.loads(input_json)
         result = predict_exoplanet(input_data)
+        # APENAS o JSON no stdout
         print(json.dumps(result))
-        
-    except Exception as e:
-        error_result = {
-            "label": 0,
-            "confidence": 0.0,
-            "error": str(e)
-        }
-        print(json.dumps(error_result))
+    else:
+        # Erro também vai para stderr
+        logging.error("No input data provided")
+        print(json.dumps({"error": "No input data provided"}))

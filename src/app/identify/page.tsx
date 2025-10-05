@@ -94,18 +94,48 @@ const IdentifyPage = () => {
 
       // Chamar API diretamente
       try {
+        // Campos obrigatórios (sempre presentes)
+        const baseData = {
+          pl_orbper: data.pl_orbper,
+          pl_trandurh: data.pl_trandurh,
+          pl_trandep: data.pl_trandep,
+          pl_rade: data.pl_rade,
+          pl_insol: data.pl_insol,
+          pl_eqt: data.pl_eqt,
+        };
+
+        // Determinar quais campos opcionais estão disponíveis
+        const optionalFields: { [key: string]: number } = {};
+        if (data.st_teff !== null && data.st_teff !== undefined) {
+          optionalFields.st_teff = data.st_teff;
+        }
+        if (data.st_logg !== null && data.st_logg !== undefined) {
+          optionalFields.st_logg = data.st_logg;
+        }
+
+        const cleanedData = {
+          ...baseData,
+          ...optionalFields,
+        };
+
+        const fieldCount = Object.keys(cleanedData).length;
+        console.log(
+          `=== ENVIANDO ${fieldCount} CAMPOS PARA API ===`,
+          cleanedData
+        );
+
         const response = await fetch("/api/identify-exoplanet", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(cleanedData),
         });
 
         if (response.ok) {
           const result = await response.json();
           console.log("=== RESULTADO DA API ===", result);
-          setIdentificationResult(result.data);
+          setIdentificationResult(result);
         } else {
           console.log("API não disponível, continuando sem identificação");
         }
@@ -166,7 +196,7 @@ const IdentifyPage = () => {
 
             <div className="flex-1 flex justify-end">
               <Dialog>
-                <DialogTrigger className="">
+                <DialogTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
@@ -178,27 +208,42 @@ const IdentifyPage = () => {
                 <DialogContent className="bg-black/90 border border-white/10 text-white">
                   <DialogHeader>
                     <DialogTitle>Modelo e suas precisões</DialogTitle>
-                    <DialogDescription>
-                      <div className="">
-                        <p className="text-white">Random Forest: </p>
-                        <p className="text-white">KOI - 83% de precisão</p>
-                        <p className="text-white">TOI - 78% de precisão</p>
-                        <p className="text-white">K2 - 98% de precisão</p>
-                      </div>
-                      <div className="pt-5">
-                        <p className="text-white">XGBoost: </p>
-                        <p className="text-white">KOI - 82% de precisão</p>
-                        <p className="text-white">TOI - 77% de precisão</p>
-                        <p className="text-white">K2 - 98% de precisão</p>
-                      </div>
-                      <div className="pt-5">
-                        <p className="text-white">Random Forest: </p>
-                        <p className="text-white">KOI - 83,43% de precisão</p>
-                        <p className="text-white">TOI - 79% de precisão</p>
-                        <p className="text-white">K2 - 99% de precisão</p>
-                      </div>
-                    </DialogDescription>
                   </DialogHeader>
+
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-white font-semibold mb-2">
+                        Random Forest:
+                      </div>
+                      <div className="text-white text-sm space-y-1">
+                        <div>KOI - 83% de precisão</div>
+                        <div>TOI - 78% de precisão</div>
+                        <div>K2 - 98% de precisão</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-white font-semibold mb-2">
+                        XGBoost:
+                      </div>
+                      <div className="text-white text-sm space-y-1">
+                        <div>KOI - 82% de precisão</div>
+                        <div>TOI - 77% de precisão</div>
+                        <div>K2 - 98% de precisão</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-white font-semibold mb-2">
+                        Stacking:
+                      </div>
+                      <div className="text-white text-sm space-y-1">
+                        <div>KOI - 83,43% de precisão</div>
+                        <div>TOI - 79% de precisão</div>
+                        <div>K2 - 99% de precisão</div>
+                      </div>
+                    </div>
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>

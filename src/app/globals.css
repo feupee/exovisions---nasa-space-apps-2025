@@ -81,3 +81,10 @@
     scrollbar-width: none;
   }
 }
+
+/* Remove as setas em navegadores WebKit (Chrome, Safari, Edge) */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

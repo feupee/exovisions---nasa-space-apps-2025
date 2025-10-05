@@ -34,9 +34,13 @@ const CompareToEarth = () => {
 
             {/* Título - Lado Direito */}
             <div className="w-full md:w-1/2 h-full flex items-center justify-center">
-              <h1 className="text-center font-nunito text-4xl md:text-5xl font-bold leading-[150%] bg-gradient-to-b from-[#b7b7b7] to-[#FFFFFF] bg-clip-text text-transparent">
+              <div className="flex flex-1 flex-col items-center justify-center space-y-4">
+                <h1 className="text-center font-nunito text-4xl md:text-5xl font-bold leading-[150%] bg-gradient-to-b from-[#b7b7b7] to-[#FFFFFF] bg-clip-text text-transparent">
                 COMPARE COM A TERRA
               </h1>
+              <p className="text-white">Comparando lado a lado um exoplaneta com a Terra</p>
+              <p></p>
+              </div>
             </div>
           </div>
         </CardContent>

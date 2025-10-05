@@ -8,86 +8,123 @@ import { Input } from "@/_components/ui/input";
 import { Label } from "@/_components/ui/label";
 import { Card, CardContent, CardTitle } from "@/_components/ui/card";
 import Comparacao_Planetas from "@/_components/Comparacao_Planetas/Comparacao_Planetas";
-import { useExoplanetAPI, ExoplanetData } from "@/hooks/useExoplanetAPI";
-import { classifyPlanet } from "@/utils/planetClassification";
+import { classifyPlanet, ExoplanetData } from "@/utils/planetClassification";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/_components/ui/dialog";
 
 const IdentifyPage = () => {
   const [submittedData, setSubmittedData] = useState<ExoplanetData | null>(
     null
   );
-  const {
-    isLoading,
-    identificationResult,
-    planetTexture,
-    error,
-    processExoplanet,
-  } = useExoplanetAPI();
+  const [isLoading, setIsLoading] = useState(false);
+  const [identificationResult, setIdentificationResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmittedData(null);
+    setError(null);
+    setIdentificationResult(null);
+    setIsLoading(true);
 
     try {
       const formData = new FormData(e.target as HTMLFormElement);
 
-      // 🔍 LOG 1: Verificar FormData bruto
       console.log("=== FORMDATA BRUTO ===");
       for (const [key, value] of formData.entries()) {
         console.log(`${key}: ${value} (tipo: ${typeof value})`);
       }
 
-      const data: ExoplanetData = {
-        pl_orbper: parseFloat(formData.get("pl_orbper") as string),
-        pl_trandurh: parseFloat(formData.get("pl_trandurh") as string),
-        pl_trandep: parseFloat(formData.get("pl_trandep") as string),
-        pl_rade: parseFloat(formData.get("pl_rade") as string),
+      // Função helper para converter valores obrigatórios - não pode retornar null
+      const parseRequiredValue = (value: string | null): number => {
+        if (!value || value.trim() === "") {
+          throw new Error("Campo obrigatório não pode estar vazio");
+        }
+        const parsed = parseFloat(value);
+        if (isNaN(parsed)) {
+          throw new Error("Valor deve ser um número válido");
+        }
+        return parsed;
       };
 
-      // Adicionar campos opcionais
-      const optionalFields: (keyof ExoplanetData)[] = [
-        "pl_insol",
-        "pl_eqt",
-        "st_teff",
-        "st_logg",
-      ];
-
-      // 🔍 LOG 2: Verificar cada campo opcional
-      console.log("=== CAMPOS OPCIONAIS ===");
-      optionalFields.forEach((field) => {
-        const value = formData.get(field as string) as string;
-        console.log(
-          `${field}: "${value}" (vazio: ${!value || value.trim() === ""})`
-        );
-        if (value && value.trim() !== "") {
-          data[field] = parseFloat(value);
-          console.log(`${field} adicionado: ${data[field]}`);
+      // Função helper para valores opcionais - pode retornar null
+      const parseOptionalValue = (value: string | null): number | null => {
+        if (!value || value.trim() === "") {
+          return null;
         }
-      });
+        const parsed = parseFloat(value);
+        return isNaN(parsed) ? null : parsed;
+      };
 
-      // 🔍 LOG 3: Dados finais
+      // Campos obrigatórios - NUNCA podem ser null
+      const data: ExoplanetData = {
+        pl_orbper: parseRequiredValue(formData.get("pl_orbper") as string),
+        pl_trandurh: parseRequiredValue(formData.get("pl_trandurh") as string),
+        pl_trandep: parseRequiredValue(formData.get("pl_trandep") as string),
+        pl_rade: parseRequiredValue(formData.get("pl_rade") as string),
+        pl_insol: parseRequiredValue(formData.get("pl_insol") as string),
+        pl_eqt: parseRequiredValue(formData.get("pl_eqt") as string),
+        // Campos opcionais - PODEM ser null
+        st_teff: parseOptionalValue(formData.get("st_teff") as string),
+        st_logg: parseOptionalValue(formData.get("st_logg") as string),
+      };
+
       console.log("=== DADOS FINAIS PROCESSADOS ===");
       console.log("Data objeto:", data);
       console.log("Data JSON:", JSON.stringify(data, null, 2));
 
-      // 🔍 LOG 4: Verificar cada valor
-      console.log("=== VERIFICAÇÃO DE VALORES ===");
-      Object.entries(data).forEach(([key, value]) => {
-        console.log(
-          `${key}: ${value} (tipo: ${typeof value}, isNaN: ${isNaN(
-            value as number
-          )})`
-        );
-      });
+      // Verificar especificamente os campos opcionais
+      console.log("=== VERIFICAÇÃO ESPECÍFICA ===");
+      console.log(
+        `st_teff (Temperatura estelar): ${data.st_teff} (é null: ${
+          data.st_teff === null
+        })`
+      );
+      console.log(
+        `st_logg (Gravidade superficial): ${data.st_logg} (é null: ${
+          data.st_logg === null
+        })`
+      );
 
-      // Processar com ambas as APIs
+      // Chamar API diretamente
+      try {
+        const response = await fetch("/api/identify-exoplanet", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log("=== RESULTADO DA API ===", result);
+          setIdentificationResult(result.data);
+        } else {
+          console.log("API não disponível, continuando sem identificação");
+        }
+      } catch (apiError) {
+        console.log("Erro na API (continuando):", apiError);
+      }
+
+      // Processar dados para visualização
       console.log("=== INICIANDO PROCESSAMENTO ===");
-      const result = await processExoplanet(data);
-      console.log("=== RESULTADO DO PROCESSAMENTO ===", result);
-
       setSubmittedData(data);
     } catch (error) {
       console.error("=== ERRO NO HANDLESUBMIT ===", error);
-      alert("Erro ao processar dados. Tente novamente.");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Erro ao processar dados. Verifique os valores inseridos."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -100,13 +137,6 @@ const IdentifyPage = () => {
   // Função para obter descrição detalhada
   const getPlanetDescription = (data: ExoplanetData) => {
     return classifyPlanet(data);
-  };
-
-  // Função para calcular temperatura média
-  const calculateAverageTemp = (data: ExoplanetData): number => {
-    if (data.pl_eqt) return data.pl_eqt - 273.15;
-    if (data.pl_insol) return data.pl_insol * 15 - 15;
-    return 15;
   };
 
   return (
@@ -135,30 +165,44 @@ const IdentifyPage = () => {
             </div>
 
             <div className="flex-1 flex justify-end">
-              <Card className="bg-black/50 border-white/20">
-                <CardTitle className="text-white text-center p-2">
-                  Modelos
-                </CardTitle>
-                <CardContent className="space-y-1 p-2">
-                  <div className="text-center">
-                    <p className="text-white text-xs">KOI</p>
-                    <p className="text-white text-xs">
-                      RandomForest - % acurácia
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-white text-xs">TOI</p>
-                    <p className="text-white text-xs">Stacking - % acurácia</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-white text-xs">K2</p>
-                    <p className="text-white text-xs">XGBoost - % acurácia</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <Dialog>
+                <DialogTrigger className="">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-white cursor-pointer"
+                  >
+                    Precisões
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-black/90 border border-white/10 text-white">
+                  <DialogHeader>
+                    <DialogTitle>Modelo e suas precisões</DialogTitle>
+                    <DialogDescription>
+                      <div className="">
+                        <p className="text-white">Random Forest: </p>
+                        <p className="text-white">KOI - 83% de precisão</p>
+                        <p className="text-white">TOI - 78% de precisão</p>
+                        <p className="text-white">K2 - 98% de precisão</p>
+                      </div>
+                      <div className="pt-5">
+                        <p className="text-white">XGBoost: </p>
+                        <p className="text-white">KOI - 82% de precisão</p>
+                        <p className="text-white">TOI - 77%</p>
+                        <p className="text-white">K2 - 98% de precisão</p>
+                      </div>
+                      <div className="pt-5">
+                        <p className="text-white">Random Forest: </p>
+                        <p className="text-white">KOI - 83,43% de precisão</p>
+                        <p className="text-white">TOI - 79%</p>
+                        <p className="text-white">K2 - 99% de precisão</p>
+                      </div>
+                    </DialogDescription>
+                  </DialogHeader>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
-
           {/* Formulário */}
           <form onSubmit={handleSubmit} className="space-y-6 px-12">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -174,8 +218,8 @@ const IdentifyPage = () => {
                   id="orbitalPeriod"
                   name="pl_orbper"
                   type="number"
-                  step="0.01"
-                  placeholder="Ex: -0.2188 (valor normalizado)"
+                  step="any"
+                  placeholder="Ex: 4.064983629314"
                   required
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
@@ -194,8 +238,8 @@ const IdentifyPage = () => {
                   id="transitDuration"
                   name="pl_trandurh"
                   type="number"
-                  step="0.01"
-                  placeholder="Ex: -1.3523 (valor normalizado)"
+                  step="any"
+                  placeholder="Ex: 2.5"
                   required
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
@@ -214,8 +258,8 @@ const IdentifyPage = () => {
                   id="transitDepth"
                   name="pl_trandep"
                   type="number"
-                  step="0.01"
-                  placeholder="Ex: -0.1709 (valor normalizado)"
+                  step="any"
+                  placeholder="Ex: 1000.123"
                   required
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
@@ -234,8 +278,8 @@ const IdentifyPage = () => {
                   id="planetRadius"
                   name="pl_rade"
                   type="number"
-                  step="0.01"
-                  placeholder="Ex: -1.0207 (valor normalizado)"
+                  step="any"
+                  placeholder="Ex: 1.2345"
                   required
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
@@ -248,14 +292,15 @@ const IdentifyPage = () => {
                   htmlFor="insolation"
                   className="text-white font-medium text-sm"
                 >
-                  Insolação (S⊕)
+                  Insolação (S⊕) *
                 </Label>
                 <Input
                   id="insolation"
                   name="pl_insol"
                   type="number"
-                  step="0.01"
-                  placeholder="Ex: -0.2652 (valor normalizado)"
+                  step="any"
+                  placeholder="Ex: 1.0"
+                  required // Adicione required
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 />
@@ -267,14 +312,15 @@ const IdentifyPage = () => {
                   htmlFor="equilibriumTemp"
                   className="text-white font-medium text-sm"
                 >
-                  Temperatura de equilíbrio (K)
+                  Temperatura de equilíbrio (K) *
                 </Label>
                 <Input
                   id="equilibriumTemp"
                   name="pl_eqt"
                   type="number"
-                  step="0.01"
-                  placeholder="Ex: -0.8377 (valor normalizado)"
+                  step="any"
+                  placeholder="Ex: 288"
+                  required // Adicione required
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 />
@@ -292,8 +338,8 @@ const IdentifyPage = () => {
                   id="stellarTemp"
                   name="st_teff"
                   type="number"
-                  step="0.01"
-                  placeholder="Ex: -1.8462 (valor normalizado)"
+                  step="any"
+                  placeholder="Ex: 5778 (deixe vazio = NULL)"
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 />
@@ -311,8 +357,8 @@ const IdentifyPage = () => {
                   id="surfaceGravity"
                   name="st_logg"
                   type="number"
-                  step="0.01"
-                  placeholder="Ex: 2.4446 (valor normalizado)"
+                  step="any"
+                  placeholder="Ex: 4.44 (deixe vazio = NULL)"
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 />
@@ -342,8 +388,6 @@ const IdentifyPage = () => {
               }`}
             >
               <div className="flex items-center gap-3 mb-4">
-                <div
-                ></div>
                 <h3 className="text-xl font-bold text-white">
                   Resultado da Análise AI
                 </h3>
@@ -413,7 +457,7 @@ const IdentifyPage = () => {
               <div className="h-[500px] w-full bg-black border border-white/10 rounded-lg overflow-hidden">
                 <Comparacao_Planetas
                   exoplanetData={submittedData}
-                  planetTexture={planetTexture}
+                  planetTexture={null}
                 />
               </div>
 
@@ -458,20 +502,25 @@ const IdentifyPage = () => {
                     </li>
                     <li>
                       <span className="font-medium">Temperatura:</span>{" "}
-                      {submittedData.pl_eqt
-                        ? `${Math.abs(submittedData.pl_eqt).toFixed(1)}K`
-                        : "N/A"}
-                    </li>
-                    <li>
-                      <span className="font-medium">Tipo:</span>{" "}
-                      {determineTerrainType(submittedData)}
+                      {Math.abs(submittedData.pl_eqt).toFixed(1)}K
                     </li>
                     <li>
                       <span className="font-medium">Insolação:</span>{" "}
-                      {submittedData.pl_insol
-                        ? Math.abs(submittedData.pl_insol).toFixed(2)
-                        : "N/A"}{" "}
-                      S⊕
+                      {Math.abs(submittedData.pl_insol).toFixed(2)} S⊕
+                    </li>
+                    <li>
+                      <span className="font-medium">Temp. Estelar:</span>{" "}
+                      {submittedData.st_teff !== null &&
+                      submittedData.st_teff !== undefined
+                        ? `${Math.abs(submittedData.st_teff).toFixed(0)}K`
+                        : "NULL"}
+                    </li>
+                    <li>
+                      <span className="font-medium">Gravidade:</span>{" "}
+                      {submittedData.st_logg !== null &&
+                      submittedData.st_logg !== undefined
+                        ? `${Math.abs(submittedData.st_logg).toFixed(2)}`
+                        : "NULL"}
                     </li>
                   </ul>
                 </div>

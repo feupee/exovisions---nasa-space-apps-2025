@@ -1,11 +1,6 @@
 import {
   Card,
-  CardAction,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/_components/ui/card";
 import Image from "next/image";
 

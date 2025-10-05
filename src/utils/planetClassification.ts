@@ -6,21 +6,31 @@ export interface PlanetProfile {
   characteristics: string[];
 }
 
-export function classifyPlanet(data: any): PlanetProfile {
-  const {
-    pl_orbper, // Período orbital (dias) - determina distância à estrela
-    pl_rade, // Raio planetário (raios terrestres) - usado apenas para escala visual
-    pl_insol, // Insolação (fluxo estelar recebido em unidades terrestres)
-    pl_eqt, // Temperatura de equilíbrio (Kelvin) - FATOR PRINCIPAL
-    st_teff, // Temperatura estelar (Kelvin)
-  } = data;
+export interface ExoplanetData {
+  // Campos obrigatórios - nunca null
+  pl_orbper: number; // Período orbital (dias)
+  pl_trandurh: number; // Duração do trânsito (horas)
+  pl_trandep: number; // Profundidade do trânsito (ppm)
+  pl_rade: number; // Raio planetário (raios terrestres)
+  pl_insol: number; // Insolação (múltiplos da Terra)
+  pl_eqt: number; // Temperatura de equilíbrio (Kelvin)
 
-  // VARIÁVEIS PRINCIPAIS PARA CLASSIFICAÇÃO
-  const temperature = pl_eqt ? Math.abs(pl_eqt) : 288; // Kelvin - ESSENCIAL
-  const insolation = pl_insol ? Math.abs(pl_insol) : 1.0; // Múltiplos da Terra - ESSENCIAL
-  const period = Math.abs(pl_orbper) || 365; // Período orbital - SECUNDÁRIO
-  const radius = Math.abs(pl_rade) || 1.0; // Raio - APENAS PARA VISUALIZAÇÃO
-  const stellarTemp = st_teff ? Math.abs(st_teff) : 5778; // Temperatura da estrela
+  // Campos opcionais - podem ser null
+  st_teff?: number | null; // Temperatura estelar (Kelvin)
+  st_logg?: number | null; // Gravidade superficial
+
+  [key: string]: unknown; // Para outros campos opcionais
+}
+
+export function classifyPlanet(data: ExoplanetData): PlanetProfile {
+  const { pl_orbper, pl_rade, pl_insol, pl_eqt, st_teff } = data;
+
+  // VARIÁVEIS PRINCIPAIS PARA CLASSIFICAÇÃO - tratar null
+  const temperature = pl_eqt && pl_eqt !== null ? Math.abs(pl_eqt) : 288; // Kelvin - ESSENCIAL
+  const insolation = pl_insol && pl_insol !== null ? Math.abs(pl_insol) : 1.0; // Múltiplos da Terra - ESSENCIAL
+  const period = pl_orbper && pl_orbper !== null ? Math.abs(pl_orbper) : 365; // Período orbital - SECUNDÁRIO
+  const radius = pl_rade && pl_rade !== null ? Math.abs(pl_rade) : 1.0; // Raio - APENAS PARA VISUALIZAÇÃO
+  const stellarTemp = st_teff && st_teff !== null ? Math.abs(st_teff) : 5778; // Temperatura da estrela
 
   let planetType: string;
   let characteristics: string[] = [];
@@ -157,7 +167,7 @@ export function classifyPlanet(data: any): PlanetProfile {
         "Atmosfera fina e fria",
         "Possíveis oceanos subterrâneos",
       ];
-      hasClouds = false; 
+      hasClouds = false;
     } else {
       planetType = "Ice";
       characteristics = [

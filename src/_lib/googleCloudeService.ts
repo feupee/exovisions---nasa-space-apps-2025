@@ -24,7 +24,7 @@ export async function callGoogleCloudModel(inputData: ExoplanetData): Promise<Pr
   console.log("=== CHAMANDO MODELO (baseado no teste.py) ===");
   console.log("Input data:", inputData);
   
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const scriptPath = path.join(process.cwd(), 'backend_modelo', 'predict.py');
     const inputJson = JSON.stringify(inputData);
     

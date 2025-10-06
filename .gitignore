@@ -44,3 +44,15 @@ next-env.d.ts
 vertex-sa.json
 backend_modelo/vertex-sa.json
 **/vertex-sa.json
+
+# .gitignore
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Google Cloud credentials
+vertex-sa.json
+*.json
+
+# ... outras entradas

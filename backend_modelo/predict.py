@@ -1,7 +1,8 @@
 # backend_modelo/predict.py
-import os
 import sys
 import json
+import os
+import tempfile
 import requests
 from google.oauth2.service_account import Credentials
 from google.auth.transport.requests import Request
@@ -13,20 +14,36 @@ PROJECT_ID  = os.getenv("PROJECT_ID", "nasa-exoplanetas")  # pode manter seu ID 
 REGION      = os.getenv("REGION", "us-central1")
 ENDPOINT_ID = os.getenv("ENDPOINT_ID", "807757316857266176")
 
-# Caminho do SA: por padrão, usa o vertex-sa.json ao lado deste arquivo.
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-KEY_PATH   = os.getenv("GOOGLE_APPLICATION_CREDENTIALS",
-                       os.path.join(SCRIPT_DIR, "vertex-sa.json"))
-
-def get_token() -> str:
-    """
-    Obtém um access token usando a service account.
-    Baseado no seu teste.py.
-    """
-    scopes = ["https://www.googleapis.com/auth/cloud-platform"]
-    creds = Credentials.from_service_account_file(KEY_PATH, scopes=scopes)
-    creds.refresh(Request())
-    return creds.token
+def get_credentials():
+    """Obter credenciais do Google Cloud a partir da variável de ambiente"""
+    try:
+        # Tentar ler do JSON na variável de ambiente
+        creds_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+        
+        if creds_json:
+            # Criar arquivo temporário com as credenciais
+            creds_dict = json.loads(creds_json)
+            
+            # Usar diretamente do dicionário
+            scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+            creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+            creds.refresh(Request())
+            return creds.token
+        else:
+            # Fallback: tentar arquivo local (apenas para desenvolvimento)
+            SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+            KEY_PATH = os.path.join(SCRIPT_DIR, "vertex-sa.json")
+            
+            if os.path.exists(KEY_PATH):
+                scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+                creds = Credentials.from_service_account_file(KEY_PATH, scopes=scopes)
+                creds.refresh(Request())
+                return creds.token
+            else:
+                raise Exception("Credenciais não encontradas em variável de ambiente nem arquivo local")
+                
+    except Exception as e:
+        raise Exception(f"Erro ao obter credenciais: {str(e)}")
 
 def _choose_model(features: dict) -> tuple[str, str]:
     """
@@ -59,7 +76,7 @@ def _build_payload(features: dict, domain: str) -> dict:
         "domains": {
             "koi": "gs://nasa-exoplanets/koi",
             "toi": "gs://nasa-exoplanets/toi",
-            "k2":  "gs://nasa-exoplanets/k2",
+            "k2":  "gs://nasa-exoplanetas/k2",
         },
         "final_dir": "gs://nasa-exoplanets/final_vote3",
         "instances": [
@@ -74,29 +91,23 @@ def _vertex_url() -> str:
     return (f"https://{REGION}-prediction-aiplatform.googleapis.com/"
             f"v1/projects/{PROJECT_ID}/locations/{REGION}/endpoints/{ENDPOINT_ID}:rawPredict")
 
-def call_vertex_ai(payload: dict) -> dict:
-    """
-    Faz a requisição ao endpoint do Vertex AI (rawPredict).
-    """
-    token = get_token()
-    r = requests.post(
-        _vertex_url(),
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=120,
-    )
-    # Tenta parsear como JSON de qualquer forma para propagar erros úteis
+def call_vertex_ai(payload):
+    """Fazer chamada para o endpoint do Vertex AI"""
     try:
-        data = r.json()
-    except Exception:
-        data = {"raw_text": r.text}
-
-    # Levanta erro HTTP se não for 2xx (após capturar o corpo)
-    r.raise_for_status()
-    return data
+        url = (f"https://{REGION}-prediction-aiplatform.googleapis.com/"
+               f"v1/projects/{PROJECT_ID}/locations/{REGION}/endpoints/{ENDPOINT_ID}:rawPredict")
+        
+        token = get_credentials()
+        
+        response = requests.post(url, headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }, json=payload, timeout=120)
+        
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        raise Exception(f"Erro na chamada Vertex AI: {str(e)}")
 
 def predict_exoplanet(props: dict) -> dict:
     """

@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     console.log("Dados recebidos para identificação:", data);
 
     // Chamar o modelo do Google Cloud
-    const prediction = await callGoogleCloudModel(data) as {
+    const prediction = (await callGoogleCloudModel(data)) as {
       label: number;
       confidence: number;
       domain?: string;
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
           ? "✅ Os dados indicam que este é um EXOPLANETA!"
           : "❌ Os dados NÃO correspondem a um exoplaneta.",
       classification:
-        prediction.label === 1 ? "Exoplaneta Confirmado" : "Falso Positivo",
+        prediction.label === 1 ? "Exoplaneta Confirmado" : "Não Exoplaneta",
       domain: prediction.domain || "koi",
       rawPrediction: prediction.raw_prediction || prediction,
     };

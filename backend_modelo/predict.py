@@ -1,145 +1,140 @@
 # backend_modelo/predict.py
+import os
 import sys
 import json
-import logging
+import requests
+from google.oauth2.service_account import Credentials
+from google.auth.transport.requests import Request
 
-# Configurar logging para stderr (não interfere no stdout JSON)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(message)s',
-    stream=sys.stderr
-)
+# =========================
+# Configurações de ambiente
+# =========================
+PROJECT_ID  = os.getenv("PROJECT_ID", "nasa-exoplanetas")  # pode manter seu ID do projeto
+REGION      = os.getenv("REGION", "us-central1")
+ENDPOINT_ID = os.getenv("ENDPOINT_ID", "807757316857266176")
 
-def predict_exoplanet(input_data):
-    try:
-        models_data = input_data.get("models", [])
-        original_data = input_data.get("originalData", {})
-        
-        # Usar logging.info ao invés de print para logs
-        logging.info(f"Executando {len(models_data)} modelos")
-        
-        results = []
-        
-        for model_info in models_data:
-            model_name = model_info["name"]
-            features = model_info["features"]
-            field_count = model_info["fieldCount"]
-            
-            logging.info(f"\n=== EXECUTANDO {model_name.upper()} ({field_count} campos) ===")
-            logging.info(f"Features: {json.dumps(features, indent=2)}")
-            
-            # Configurar endpoint baseado no número de campos
-            if field_count == 6:
-                endpoint_id = "seu_endpoint_6_campos"
-            elif field_count == 7:
-                endpoint_id = "seu_endpoint_7_campos"
-            elif field_count == 8:
-                endpoint_id = "seu_endpoint_8_campos"
-            else:
-                endpoint_id = "seu_endpoint_ensemble"
-            
-            # Payload para o modelo específico
-            payload = {
-                "instances": [
-                    {
-                        "domain": "koi",
-                        "features": features
-                    }
-                ]
-            }
-            
-            # Simular chamada ao modelo (substitua pela chamada real)
-            try:
-                # SIMULAÇÃO - substitua pela chamada real
-                import random
-                simulated_prediction = {
-                    "label": random.choice([0, 1]),
-                    "confidence": random.uniform(0.6, 0.95),
-                    "model": model_name,
-                    "field_count": field_count
-                }
-                
-                results.append(simulated_prediction)
-                logging.info(f"Resultado {model_name}: {simulated_prediction}")
-                
-            except Exception as model_error:
-                logging.error(f"Erro no modelo {model_name}: {model_error}")
-                results.append({
-                    "label": 0,
-                    "confidence": 0.0,
-                    "model": model_name,
-                    "field_count": field_count,
-                    "error": str(model_error)
-                })
-        
-        # Processar resultados - usar ensemble ou melhor resultado
-        best_result = max(results, key=lambda x: x.get("confidence", 0))
-        
-        final_result = {
-            "label": best_result["label"],
-            "confidence": best_result["confidence"],
-            "best_model": best_result["model"],
-            "field_count_used": best_result["field_count"],
-            "all_results": results,
-            "ensemble_prediction": calculate_ensemble(results)
-        }
-        
-        logging.info(f"\n=== RESULTADO FINAL ===")
-        logging.info(json.dumps(final_result, indent=2))
-        
-        return final_result
-        
-    except Exception as e:
-        logging.error(f"Erro geral: {e}")
-        return {
-            "label": 0,
-            "confidence": 0.0,
-            "error": str(e),
-            "all_results": []
-        }
+# Caminho do SA: por padrão, usa o vertex-sa.json ao lado deste arquivo.
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+KEY_PATH   = os.getenv("GOOGLE_APPLICATION_CREDENTIALS",
+                       os.path.join(SCRIPT_DIR, "vertex-sa.json"))
 
-def calculate_ensemble(results):
-    """Calcula predição ensemble dos modelos"""
-    if not results:
-        return {"label": 0, "confidence": 0.0}
-    
-    # Média ponderada das confidências
-    total_confidence = 0
-    total_weight = 0
-    positive_votes = 0
-    
-    for result in results:
-        if "error" not in result:
-            confidence = result.get("confidence", 0)
-            total_confidence += confidence
-            total_weight += 1
-            if result.get("label", 0) == 1:
-                positive_votes += confidence
-    
-    if total_weight == 0:
-        return {"label": 0, "confidence": 0.0}
-    
-    avg_confidence = total_confidence / total_weight
-    vote_ratio = positive_votes / total_confidence if total_confidence > 0 else 0
-    
-    # Decisão ensemble
-    ensemble_label = 1 if vote_ratio > 0.5 else 0
-    ensemble_confidence = avg_confidence * (vote_ratio if ensemble_label == 1 else (1 - vote_ratio))
-    
+def get_token() -> str:
+    """
+    Obtém um access token usando a service account.
+    Baseado no seu teste.py.
+    """
+    scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+    creds = Credentials.from_service_account_file(KEY_PATH, scopes=scopes)
+    creds.refresh(Request())
+    return creds.token
+
+def _choose_model(features: dict) -> tuple[str, str]:
+    """
+    Decide o tipo de envio (4 casos) e o domínio a usar,
+    conforme presença de st_teff e st_logg.
+      - 6_fields           -> sem st_teff e sem st_logg  -> domain 'koi'
+      - 7_fields_teff      -> com st_teff, sem st_logg    -> domain 'toi'
+      - 7_fields_logg      -> sem st_teff, com st_logg    -> domain 'k2'
+      - 8_fields           -> com st_teff e com st_logg   -> domain 'toi'
+    """
+    has_teff = "st_teff" in features and features["st_teff"] is not None
+    has_logg = "st_logg" in features and features["st_logg"] is not None
+
+    if not has_teff and not has_logg:
+        return "6_fields", "koi"
+    if has_teff and not has_logg:
+        return "7_fields_teff", "toi"
+    if not has_teff and has_logg:
+        return "7_fields_logg", "k2"
+    return "8_fields", "toi"
+
+def _build_payload(features: dict, domain: str) -> dict:
+    """
+    Monta o payload conforme seu exemplo, incluindo apenas os campos presentes.
+    """
+    # Garante que não enviamos chaves opcionais com None
+    clean_features = {k: v for k, v in features.items() if v is not None}
+
     return {
-        "label": ensemble_label,
-        "confidence": ensemble_confidence,
-        "vote_ratio": vote_ratio
+        "domains": {
+            "koi": "gs://nasa-exoplanets/koi",
+            "toi": "gs://nasa-exoplanets/toi",
+            "k2":  "gs://nasa-exoplanets/k2",
+        },
+        "final_dir": "gs://nasa-exoplanets/final_vote3",
+        "instances": [
+            {
+                "domain": domain,
+                "features": clean_features
+            }
+        ]
     }
 
+def _vertex_url() -> str:
+    return (f"https://{REGION}-prediction-aiplatform.googleapis.com/"
+            f"v1/projects/{PROJECT_ID}/locations/{REGION}/endpoints/{ENDPOINT_ID}:rawPredict")
+
+def call_vertex_ai(payload: dict) -> dict:
+    """
+    Faz a requisição ao endpoint do Vertex AI (rawPredict).
+    """
+    token = get_token()
+    r = requests.post(
+        _vertex_url(),
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+        json=payload,
+        timeout=120,
+    )
+    # Tenta parsear como JSON de qualquer forma para propagar erros úteis
+    try:
+        data = r.json()
+    except Exception:
+        data = {"raw_text": r.text}
+
+    # Levanta erro HTTP se não for 2xx (após capturar o corpo)
+    r.raise_for_status()
+    return data
+
+def predict_exoplanet(props: dict) -> dict:
+    """
+    Função principal para ser chamada pelo seu handler de API.
+    Recebe os dados vindos do page.tsx (features) via props (dict),
+    escolhe o tipo correto (4 casos), monta o payload e chama o Vertex.
+    """
+    # props deve conter os 6 campos obrigatórios e opcionalmente st_teff / st_logg
+    # Qualquer um dos opcionais pode estar ausente ou ser None.
+    model_type, domain = _choose_model(props)
+    payload = _build_payload(props, domain)
+
+    try:
+        vertex_resp = call_vertex_ai(payload)
+    except Exception as e:
+        # Resposta de erro padronizada (útil para o frontend)
+        return {
+            "error": str(e),
+            "model_type": model_type,
+            "domain_used": domain,
+            "field_count": len({k: v for k, v in props.items() if v is not None}),
+        }
+
+    # Acrescenta metadados que o page.tsx usa para exibir info do modelo
+    vertex_resp["model_type"] = model_type
+    vertex_resp["domain_used"] = domain
+    vertex_resp["field_count"] = len({k: v for k, v in props.items() if v is not None})
+    return vertex_resp
+
 if __name__ == "__main__":
+    # Execução via CLI:
+    #   python predict.py '{"pl_orbper":..., "pl_trandurh":..., ..., "st_teff":..., "st_logg":...}'
     if len(sys.argv) > 1:
-        input_json = sys.argv[1]
-        input_data = json.loads(input_json)
-        result = predict_exoplanet(input_data)
-        # APENAS o JSON no stdout
-        print(json.dumps(result))
+        try:
+            features = json.loads(sys.argv[1])
+            result = predict_exoplanet(features)
+            print(json.dumps(result, ensure_ascii=False))
+        except Exception as e:
+            print(json.dumps({"error": str(e)}, ensure_ascii=False))
     else:
-        # Erro também vai para stderr
-        logging.error("No input data provided")
-        print(json.dumps({"error": "No input data provided"}))
+        print(json.dumps({"error": "No input data provided"}, ensure_ascii=False))

@@ -2,9 +2,10 @@
 import { Card, CardContent } from "@/_components/ui/card";
 import Comparacao_Planetas from "./Comparacao_Planetas/Comparacao_Planetas";
 import Image from "next/image";
+import { ExoplanetData } from "@/utils/planetClassification";
 
 // 1. Defina os dados estáticos do planeta de vitrine aqui dentro.
-const vitrineExoplanetData = {
+const vitrineExoplanetData: ExoplanetData = {
   pl_eqt: 295, // Temperatura ideal para água líquida
   pl_rade: 1.6, // Uma "Super-Terra"
   st_teff: 4500, // Estrela Anã Laranja (luz alaranjada)
@@ -27,7 +28,7 @@ const CompareToEarth = () => {
               <div className="w-full h-full max-h-[500px]">
                 <Comparacao_Planetas
                   exoplanetData={vitrineExoplanetData}
-                  planetTexture={null}
+                  planetTexture={undefined} // Usar undefined ao invés de null
                 />
               </div>
             </div>
@@ -36,10 +37,12 @@ const CompareToEarth = () => {
             <div className="w-full md:w-1/2 h-full flex items-center justify-center">
               <div className="flex flex-1 flex-col items-center justify-center space-y-4">
                 <h1 className="text-center font-nunito text-4xl md:text-5xl font-bold leading-[150%] bg-gradient-to-b from-[#b7b7b7] to-[#FFFFFF] bg-clip-text text-transparent">
-                COMPARE COM A TERRA
-              </h1>
-              <p className="text-white">Comparando lado a lado um exoplaneta com a Terra</p>
-              <p></p>
+                  COMPARE COM A TERRA
+                </h1>
+                <p className="text-white">
+                  Comparando lado a lado um exoplaneta com a Terra
+                </p>
+                <p></p>
               </div>
             </div>
           </div>

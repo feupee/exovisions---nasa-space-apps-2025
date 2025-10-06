@@ -92,10 +92,9 @@ const IdentifyPage = () => {
         })`
       );
 
-      // Chamar API diretamente
+      // Chamar API via route.ts -> predict.py
       try {
-        // Campos obrigatórios (sempre presentes)
-        const baseData = {
+        const baseFeatures = {
           pl_orbper: data.pl_orbper,
           pl_trandurh: data.pl_trandurh,
           pl_trandep: data.pl_trandep,
@@ -104,43 +103,59 @@ const IdentifyPage = () => {
           pl_eqt: data.pl_eqt,
         };
 
-        // Determinar quais campos opcionais estão disponíveis
-        const optionalFields: { [key: string]: number } = {};
-        if (data.st_teff !== null && data.st_teff !== undefined) {
-          optionalFields.st_teff = data.st_teff;
-        }
-        if (data.st_logg !== null && data.st_logg !== undefined) {
-          optionalFields.st_logg = data.st_logg;
-        }
+        const apiData: any = { ...baseFeatures };
+        if (data.st_teff !== null && data.st_teff !== undefined)
+          apiData.st_teff = data.st_teff;
+        if (data.st_logg !== null && data.st_logg !== undefined)
+          apiData.st_logg = data.st_logg;
 
-        const cleanedData = {
-          ...baseData,
-          ...optionalFields,
-        };
+        const fieldCount = Object.keys(apiData).length;
+        const has_st_teff = "st_teff" in apiData;
+        const has_st_logg = "st_logg" in apiData;
 
-        const fieldCount = Object.keys(cleanedData).length;
+        let modelType = "";
+        if (!has_st_teff && !has_st_logg) modelType = "6 campos básicos";
+        else if (has_st_teff && !has_st_logg)
+          modelType = "7 campos (com st_teff)";
+        else if (!has_st_teff && has_st_logg)
+          modelType = "7 campos (com st_logg)";
+        else modelType = "8 campos completos";
+
         console.log(
-          `=== ENVIANDO ${fieldCount} CAMPOS PARA API ===`,
-          cleanedData
+          `=== ENVIANDO ${fieldCount} CAMPOS (${modelType}) PARA API ===`
         );
+        console.log("Dados para API:", apiData);
 
         const response = await fetch("/api/identify-exoplanet", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(cleanedData),
+          body: JSON.stringify(apiData),
         });
 
         if (response.ok) {
           const result = await response.json();
           console.log("=== RESULTADO DA API ===", result);
-          setIdentificationResult(result);
+
+          // Simplificar resultado
+          const simplifiedResult = {
+            prediction: result.prediction, // 0 ou 1
+            message:
+              result.prediction === 1
+                ? "✅ Este é um EXOPLANETA!"
+                : "❌ NÃO é um exoplaneta.",
+            classification:
+              result.prediction === 1 ? "Exoplaneta" : "Não Exoplaneta",
+          };
+
+          setIdentificationResult(simplifiedResult);
         } else {
-          console.log("API não disponível, continuando sem identificação");
+          console.log("API não disponível");
         }
       } catch (apiError) {
         console.log("Erro na API (continuando):", apiError);
+        setError("Erro na comunicação com a API de identificação");
       }
 
       // Processar dados para visualização
@@ -264,7 +279,7 @@ const IdentifyPage = () => {
                   name="pl_orbper"
                   type="number"
                   step="any"
-                  placeholder="Ex: 4.064983629314"
+                  placeholder=""
                   required
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
@@ -284,7 +299,7 @@ const IdentifyPage = () => {
                   name="pl_trandurh"
                   type="number"
                   step="any"
-                  placeholder="Ex: 2.5"
+                  placeholder=""
                   required
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
@@ -304,7 +319,7 @@ const IdentifyPage = () => {
                   name="pl_trandep"
                   type="number"
                   step="any"
-                  placeholder="Ex: 1000.123"
+                  placeholder=""
                   required
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
@@ -324,7 +339,7 @@ const IdentifyPage = () => {
                   name="pl_rade"
                   type="number"
                   step="any"
-                  placeholder="Ex: 1.2345"
+                  placeholder=""
                   required
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
@@ -344,8 +359,8 @@ const IdentifyPage = () => {
                   name="pl_insol"
                   type="number"
                   step="any"
-                  placeholder="Ex: 1.0"
-                  required // Adicione required
+                  placeholder=""
+                  required
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 />
@@ -364,8 +379,8 @@ const IdentifyPage = () => {
                   name="pl_eqt"
                   type="number"
                   step="any"
-                  placeholder="Ex: 288"
-                  required // Adicione required
+                  placeholder=""
+                  required
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 />
@@ -384,7 +399,7 @@ const IdentifyPage = () => {
                   name="st_teff"
                   type="number"
                   step="any"
-                  placeholder="Ex: 5778 (deixe vazio = NULL)"
+                  placeholder=""
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 />
@@ -403,7 +418,7 @@ const IdentifyPage = () => {
                   name="st_logg"
                   type="number"
                   step="any"
-                  placeholder="Ex: 4.44 (deixe vazio = NULL)"
+                  placeholder=""
                   disabled={isLoading}
                   className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
                 />
@@ -423,7 +438,7 @@ const IdentifyPage = () => {
             </div>
           </form>
 
-          {/* Resultado da identificação AI */}
+          {/* Resultado da identificação AI - SIMPLIFICADO */}
           {identificationResult && (
             <div
               className={`mt-8 p-6 rounded-lg border ${
@@ -432,12 +447,6 @@ const IdentifyPage = () => {
                   : "bg-red-500/20 border-red-500/30"
               }`}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <h3 className="text-xl font-bold text-white">
-                  Resultado da Análise AI
-                </h3>
-              </div>
-
               <div className="space-y-3">
                 <p
                   className={`text-lg font-semibold ${
@@ -449,34 +458,10 @@ const IdentifyPage = () => {
                   {identificationResult.message}
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-white/80">
-                      <span className="font-medium">Classificação:</span>{" "}
-                      {identificationResult.classification}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-white/80">
-                      <span className="font-medium">Confiança:</span>{" "}
-                      {(identificationResult.confidence * 100).toFixed(1)}%
-                    </p>
-                  </div>
-                </div>
-
-                {/* Barra de confiança visual */}
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${
-                      identificationResult.prediction === 1
-                        ? "bg-green-400"
-                        : "bg-red-400"
-                    }`}
-                    style={{
-                      width: `${identificationResult.confidence * 100}%`,
-                    }}
-                  ></div>
-                </div>
+                <p className="text-white/80">
+                  <span className="font-medium">Classificação:</span>{" "}
+                  {identificationResult.classification}
+                </p>
               </div>
             </div>
           )}
@@ -502,7 +487,7 @@ const IdentifyPage = () => {
               <div className="h-[500px] w-full bg-black border border-white/10 rounded-lg overflow-hidden">
                 <Comparacao_Planetas
                   exoplanetData={submittedData}
-                  planetTexture={null}
+                  planetTexture={undefined} // Mudando de null para undefined
                 />
               </div>
 
